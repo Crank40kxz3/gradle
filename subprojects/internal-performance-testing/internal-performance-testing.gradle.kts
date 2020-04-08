@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 import accessors.java
-import org.gradle.gradlebuild.unittestandcompile.ModuleType
-
 plugins {
-    `java-library`
+    gradlebuild.internal.java
     gradlebuild.classycle
 }
 
@@ -71,10 +69,6 @@ dependencies {
     implementation(testFixtures(project(":toolingApi")))
 
     runtimeOnly("com.h2database:h2:1.4.192")
-}
-
-gradlebuildJava {
-    moduleType = ModuleType.INTERNAL
 }
 
 val generatedResourcesDir = gradlebuildJava.generatedResourcesDir
