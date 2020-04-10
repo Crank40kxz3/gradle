@@ -71,7 +71,7 @@ public class JdkTools {
         DefaultClassLoaderFactory defaultClassLoaderFactory = new DefaultClassLoaderFactory();
         JavaVersion javaVersion = Jvm.current().getJavaVersion();
         boolean java9Compatible = javaVersion.isJava9Compatible();
-        ClassLoader filteringClassLoader = getSystemFilteringClassLoader(defaultClassLoaderFactory);
+        ClassLoader filteringClassLoader = getSystemFilteringClassLoader(defaultClassLoaderFactory, java9Compatible);
         if (!java9Compatible) {
             File toolsJar = javaInfo.getToolsJar();
             if (toolsJar == null) {
@@ -88,9 +88,11 @@ public class JdkTools {
         }
     }
 
-    private ClassLoader getSystemFilteringClassLoader(ClassLoaderFactory classLoaderFactory) {
+    private ClassLoader getSystemFilteringClassLoader(ClassLoaderFactory classLoaderFactory, boolean java9compatible) {
         FilteringClassLoader.Spec filterSpec = new FilteringClassLoader.Spec();
-        filterSpec.allowPackage("com.sun.tools");
+        if (java9compatible) {
+            filterSpec.allowPackage("com.sun.tools");
+        }
         return classLoaderFactory.createFilteringClassLoader(getSystemClassLoader(), filterSpec);
     }
 

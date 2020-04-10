@@ -16,6 +16,7 @@
 
 package org.gradle.language.java.internal;
 
+import com.google.common.collect.ImmutableList;
 import org.gradle.api.internal.ClassPathRegistry;
 import org.gradle.api.internal.tasks.CurrentJvmJavaToolChain;
 import org.gradle.api.internal.tasks.JavaToolChainFactory;
@@ -36,6 +37,8 @@ import org.gradle.workers.internal.ActionExecutionSpecFactory;
 import org.gradle.workers.internal.WorkerDaemonFactory;
 
 import javax.tools.JavaCompiler;
+import java.io.File;
+import java.util.List;
 
 public class JavaToolChainServiceRegistry extends AbstractPluginServiceRegistry {
     @Override
@@ -49,7 +52,11 @@ public class JavaToolChainServiceRegistry extends AbstractPluginServiceRegistry 
 
     private static class BuildSessionScopeCompileServices {
         Factory<JavaCompiler> createJavaHomeBasedJavaCompilerFactory(ClassPathRegistry classPathRegistry) {
-            return new JavaHomeBasedJavaCompilerFactory(classPathRegistry.getClassPath("JAVA-COMPILER-PLUGIN").getAsFiles());
+            List<File> files = classPathRegistry.getClassPath("JAVA-COMPILER-PLUGIN").getAsFiles();
+            // we're using a copy here because this list is going to be serialized to the compiler daemon
+            // and we want to reduce its overhead (in terms of classloading) and the Guava list types are
+            // already loaded
+            return new JavaHomeBasedJavaCompilerFactory(ImmutableList.copyOf(files));
         }
     }
 

@@ -22,6 +22,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -36,6 +37,88 @@ import java.util.Set;
 public class FilteringClassLoader extends ClassLoader implements ClassLoaderHierarchy {
     private static final ClassLoader EXT_CLASS_LOADER;
     private static final Set<String> SYSTEM_PACKAGES = new HashSet<String>();
+    private static final Set<String> ALLOWED_EXT_PACKAGES = new HashSet<String>(Arrays.asList(
+        "com.sun.beans",
+        "com.sun.source.util",
+        "com.sun.tools.javac.api",
+        "com.sun.tools.javac.code",
+        "java.beans",
+        "java.io",
+        "java.lang",
+        "java.lang.annotation",
+        "java.lang.invoke",
+        "java.lang.ref",
+        "java.lang.reflect",
+        "java.math",
+        "java.net",
+        "java.nio",
+        "java.nio.channels",
+        "java.nio.channels.spi",
+        "java.nio.charset",
+        "java.nio.charset.spi",
+        "java.nio.file",
+        "java.nio.file.attribute",
+        "java.security",
+        "java.security.cert",
+        "java.text",
+        "java.text.spi",
+        "java.util",
+        "java.util.concurrent",
+        "java.util.concurrent.atomic",
+        "java.util.concurrent.locks",
+        "java.util.function",
+        "java.util.jar",
+        "java.util.logging",
+        "java.util.regex",
+        "java.util.spi",
+        "java.util.zip",
+        "javax.annotation.processing",
+        "javax.lang.model",
+        "javax.lang.model.element",
+        "javax.lang.model.type",
+        "javax.lang.model.util",
+        "javax.tools",
+        "jdk.internal.org.objectweb.asm",
+        "sun.invoke.empty",
+        "sun.invoke.util",
+        "sun.launcher",
+        "sun.misc",
+        "sun.net",
+        "sun.net.sdp",
+        "sun.net.spi.nameservice",
+        "sun.net.util",
+        "sun.net.www",
+        "sun.net.www.protocol.file",
+        "sun.net.www.protocol.jar",
+        "sun.nio",
+        "sun.nio.ch",
+        "sun.nio.cs",
+        "sun.reflect",
+        "sun.reflect.annotation",
+        "sun.reflect.generics.factory",
+        "sun.reflect.generics.parser",
+        "sun.reflect.generics.reflectiveObjects",
+        "sun.reflect.generics.repository",
+        "sun.reflect.generics.scope",
+        "sun.reflect.generics.tree",
+        "sun.reflect.generics.visitor",
+        "sun.reflect.misc",
+        "sun.security.action",
+        "sun.security.jca",
+        "sun.security.provider",
+        "sun.security.util",
+        "sun.text.resources",
+        "sun.text.resources.en",
+        "sun.usagetracker",
+        "sun.util", "sun.util.calendar",
+        "sun.util.locale",
+        "sun.util.locale.provider",
+        "sun.util.logging",
+        "sun.util.resources",
+        "sun.util.resources.en",
+        "sun.util.spi"
+    ));
+
     public static final String DEFAULT_PACKAGE = "DEFAULT";
     private final Set<String> packageNames;
     private final TrieSet packagePrefixes;
@@ -88,7 +171,13 @@ public class FilteringClassLoader extends ClassLoader implements ClassLoaderHier
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         try {
-            return EXT_CLASS_LOADER.loadClass(name);
+            int endIndex = name.lastIndexOf(".");
+            String pkg = endIndex>0 ? name.substring(0, endIndex) : "";
+            if (ALLOWED_EXT_PACKAGES.contains(pkg)) {
+                // don't try to load from ext classloader if the package is not known to us,
+                // because it's costly (fills in a stack trace) and almost certainly a mistake
+                return EXT_CLASS_LOADER.loadClass(name);
+            }
         } catch (ClassNotFoundException ignore) {
             // ignore
         }
@@ -232,12 +321,12 @@ public class FilteringClassLoader extends ClassLoader implements ClassLoaderHier
          */
         public boolean isEmpty() {
             return classNames.isEmpty()
-                    && packageNames.isEmpty()
-                    && packagePrefixes.isEmpty()
-                    && resourcePrefixes.isEmpty()
-                    && resourceNames.isEmpty()
-                    && disallowedClassNames.isEmpty()
-                    && disallowedPackagePrefixes.isEmpty();
+                && packageNames.isEmpty()
+                && packagePrefixes.isEmpty()
+                && resourcePrefixes.isEmpty()
+                && resourceNames.isEmpty()
+                && disallowedClassNames.isEmpty()
+                && disallowedPackagePrefixes.isEmpty();
         }
 
         /**
