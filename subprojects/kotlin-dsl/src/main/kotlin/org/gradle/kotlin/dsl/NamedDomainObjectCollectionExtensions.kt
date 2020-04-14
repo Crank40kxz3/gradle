@@ -221,12 +221,21 @@ private constructor(
         fun <T> of(delegate: T) =
             ExistingDomainObjectDelegate(delegate)
     }
+
+    /**
+     * Gets the delegate value.
+     *
+     * @since 6.5
+     */
+    operator fun getValue(receiver: Any?, property: KProperty<*>): T =
+        delegate
 }
 
 
 /**
  * Gets the delegate value.
  */
+@Suppress("EXTENSION_SHADOWED_BY_MEMBER") // kept for backwards compatibility
 operator fun <T> ExistingDomainObjectDelegate<T>.getValue(receiver: Any?, property: KProperty<*>): T =
     delegate
 
